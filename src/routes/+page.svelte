@@ -1,11 +1,11 @@
 <script>
 	import { open } from '@tauri-apps/api/dialog';
 	import { readDir } from '@tauri-apps/api/fs';
-	// import { FileEntry } from '@tauri-apps/api/fs';
+	import { watch } from "tauri-plugin-fs-watch-api"
+	import { unwatch, skins } from '$lib/store.global';
+
 	import folder_icon from '$lib/assets/folder.svg';
 
-	/** @type {FileEntry[]}*/
-	let entries = [];
 
 	const getSkinsFolder = async () => {
 		const selectedFolder = await open({
@@ -16,9 +16,18 @@
 		if (!selectedFolder) return;
 
 		if (typeof selectedFolder === 'string') {
-			entries = await readDir(selectedFolder);
+			$unwatch = await watch(selectedFolder, eventWatcher, { recursive: true });
+
+			$skins = await readDir(selectedFolder);
 		}
 	};
+
+	/**
+	 * @param {import('tauri-plugin-fs-watch-api').DebouncedEvent} event
+	 */
+	const eventWatcher = (event) => {
+		console.log(event);
+	}
 </script>
 
 <div class="container">
@@ -27,8 +36,8 @@
 	<button on:click={getSkinsFolder}>Import</button>
 	<br />
 	<div class="list">
-		{#each entries as entry}
-			<p>{entry.name}</p>
+		{#each $skins as skin}
+			<img src={skin.path} alt={skin.name} />
 		{/each}
 	</div>
 </div>
