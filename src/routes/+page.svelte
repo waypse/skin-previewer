@@ -1,45 +1,63 @@
 <script>
 	import { open } from '@tauri-apps/api/dialog';
 	import { readDir } from '@tauri-apps/api/fs';
-	import { watch } from "tauri-plugin-fs-watch-api"
-	import { unwatch, skins } from '$lib/store.global';
-
+	import { invoke } from '@tauri-apps/api/tauri';
+	import { selectedFolder, skins } from '$lib/store.global';
 	import folder_icon from '$lib/assets/folder.svg';
+	import { slide } from 'svelte/transition';
+	import { goto } from '$app/navigation';
 
+	let error = '';
 
 	const getSkinsFolder = async () => {
-		const selectedFolder = await open({
+		const selectedDir = await open({
 			directory: true,
 			multiple: false
 		});
 
-		if (!selectedFolder) return;
+		// If the user cancels the dialog
+		if (!selectedDir) return;
 
-		if (typeof selectedFolder === 'string') {
-			$unwatch = await watch(selectedFolder, eventWatcher, { recursive: true });
+		// If the user selects a directory
+		if (typeof selectedDir === 'string') {
+			$selectedFolder = selectedDir;
+			const skinsPaths = await readDir(selectedDir);
+			await Promise.all(
+				skinsPaths.map(async (skin) => {
+					// TODO: Check if the directory contains a valid skin
+					const isDir = await invoke('is_dir', { path: skin.path });
+					if (isDir) $skins.push(skin);
+					else console.warn(skin.path + ' is not a directory');
+				})
+			);
 
-			$skins = await readDir(selectedFolder);
+			if ($skins.length === 0) {
+				setError('No skins found in this directory');
+				return;
+			}
+			await goto('/previewer');
+			return;
 		}
+
+		// In case of unexpected behaviour
+		setError('Please chose the directory containing your skins');
 	};
 
-	/**
-	 * @param {import('tauri-plugin-fs-watch-api').DebouncedEvent} event
-	 */
-	const eventWatcher = (event) => {
-		console.log(event);
-	}
+	const setError = (msg) => {
+		error = msg;
+		setTimeout(() => {
+			error = '';
+		}, 5000);
+	};
 </script>
 
 <div class="container">
 	<img src={folder_icon} alt="folder" />
 	<p>Import your skins folder</p>
 	<button on:click={getSkinsFolder}>Import</button>
-	<br />
-	<div class="list">
-		{#each $skins as skin}
-			<img src={skin.path} alt={skin.name} />
-		{/each}
-	</div>
+	{#if error}
+		<p transition:slide>{error}</p>
+	{/if}
 </div>
 
 <style>
@@ -51,13 +69,5 @@
 		align-items: center;
 		justify-content: center;
 		gap: 1rem;
-	}
-
-	.list {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
 	}
 </style>

@@ -1,9 +1,4 @@
-import { writable } from "svelte/store";
-
-
-export const skins = writable([]);
+import { writable } from 'svelte/store';
 
 export const selectedFolder = writable('');
-
-export const unwatch = writable(()=>{});
-
+export const skins = writable([]);
