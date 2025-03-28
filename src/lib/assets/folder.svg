@@ -1,11 +1,4 @@
-<script>
-  const openeFileExplorer = () => {
-    console.log(1);
-  };
-</script>
-
-<div>
-  <svg
+<svg
     xmlns="http://www.w3.org/2000/svg"
     width="235"
     height="230"
@@ -17,9 +10,3 @@
       fill="#605E5F"
     />
   </svg>
-  <p>Import your skins folder</p>
-  <button on:click={openeFileExplorer}>Import</button>
-</div>
-
-<style>
-</style>
